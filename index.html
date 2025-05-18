@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Interactive Itinerary Board</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+    />
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <button class="hamburger"><i class="fas fa-bars"></i></button>
+    <div class="container">
+      <div class="sidebar">
+        <button id="addTripSidebarBtn" class="btn">
+          <i class="fas fa-plus"></i> Add Trip
+        </button>
+        <h2>Ongoing Trips</h2>
+        <ul id="ongoingTripList" class="trip-list"></ul>
+        <h2>Completed Trips</h2>
+        <ul id="completedTripList" class="trip-list"></ul>
+      </div>
+      <div class="main-content">
+        <div id="landingPage" class="landing-page active">
+          <div class="header-content">
+            <h1><i class="fas fa-map-marked-alt"></i> Plan Your Adventure</h1>
+            <button id="addTripBtn" class="btn">
+              <i class="fas fa-plus"></i> Add Trip
+            </button>
+          </div>
+          <div class="history-section">
+            <h2>Visit History</h2>
+            <div id="historyList" class="history-list"></div>
+          </div>
+          <div class="ongoing-section">
+            <h2>Ongoing Trip</h2>
+            <div id="ongoingList" class="ongoing-list"></div>
+          </div>
+        </div>
+        <div id="itineraryPage" class="itinerary-page">
+          <div class="header-content">
+            <h1 id="tripTitle"></h1>
+            <div class="controls">
+              <button id="saveItinerary" class="btn">
+                <i class="fas fa-save"></i> Save
+              </button>
+              <button id="viewBudget" class="btn">
+                <i class="fas fa-wallet"></i> Budget
+              </button>
+              <button id="exportItinerary" class="btn">
+                <i class="fas fa-file-pdf"></i> Export PDF
+              </button>
+              <button id="completeTrip" class="btn btn-success">
+                <i class="fas fa-check"></i> Complete Trip
+              </button>
+            </div>
+          </div>
+          <div id="board" class="board"></div>
+        </div>
+        <div id="summaryPage" class="summary-page">
+          <div class="header-content">
+            <h1>Trip Summary</h1>
+            <div class="controls">
+              <button id="exportSummary" class="btn">
+                <i class="fas fa-file-pdf"></i> Export PDF
+              </button>
+              <button id="backToLanding" class="btn">
+                <i class="fas fa-arrow-left"></i> Back
+              </button>
+            </div>
+          </div>
+          <div class="summary-content">
+            <h2 id="summaryTitle"></h2>
+            <div class="summary-stats" id="summaryStats"></div>
+            <div class="chart-buttons">
+              <button id="showPieChart" class="btn">Pie Chart</button>
+              <button id="showBarChart" class="btn">Bar Chart</button>
+              <button id="showLineChart" class="btn">Line Chart</button>
+            </div>
+            <div class="chart-container">
+              <canvas id="completionChart"></canvas>
+            </div>
+            <div class="activity-list" id="activityList"></div>
+            <div class="budget-list" id="budgetSummary"></div>
+          </div>
+        </div>
+        <div id="budgetPage" class="budget-page">
+          <div class="header-content">
+            <h1>Budget Tracker</h1>
+            <div class="controls">
+              <button id="backToItinerary" class="btn">
+                <i class="fas fa-arrow-left"></i> Back
+              </button>
+            </div>
+          </div>
+          <div class="budget-content">
+            <h2 id="budgetTitle"></h2>
+            <div class="budget-stats" id="budgetStats"></div>
+            <div class="budget-list" id="budgetList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="addTripModal" class="modal-backdrop">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 class="modal-title">Add Trip</h3>
+          <button class="modal-close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <form id="tripForm">
+            <div class="form-group">
+              <label for="tripTitleInput" class="form-label"
+                >Trip Title *</label
+              >
+              <input
+                type="text"
+                id="tripTitleInput"
+                class="form-control"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="tripDestination" class="form-label"
+                >Destination *</label
+              >
+              <input
+                type="text"
+                id="tripDestination"
+                class="form-control"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="tripDates" class="form-label">Select Dates *</label>
+              <input type="text" id="tripDates" class="form-control" required />
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button id="cancelTrip" class="btn btn-secondary">Cancel</button>
+          <button id="saveTrip" class="btn">Save Trip</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="addDayModal" class="modal-backdrop">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 class="modal-title">Add Day</h3>
+          <button class="modal-close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <form id="dayForm">
+            <div class="form-group">
+              <label for="dayTitle" class="form-label">Day Title *</label>
+              <input type="text" id="dayTitle" class="form-control" required />
+            </div>
+            <div class="form-group">
+              <label for="dayDate" class="form-label">Date *</label>
+              <input type="text" id="dayDate" class="form-control" required />
+            </div>
+            <input type="hidden" id="editDayId" />
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button id="cancelDay" class="btn btn-secondary">Cancel</button>
+          <button id="saveDay" class="btn">Save Day</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="addActivityModal" class="modal-backdrop">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 class="modal-title">Add Activity</h3>
+          <button class="modal-close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <form id="activityForm">
+            <div class="form-group">
+              <label for="activityTime" class="form-label"
+                >Time (optional)</label
+              >
+              <input type="time" id="activityTime" class="form-control" />
+            </div>
+            <div class="form-group">
+              <label for="activityTitle" class="form-label">Title *</label>
+              <input
+                type="text"
+                id="activityTitle"
+                class="form-control"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="activityCost" class="form-label"
+                >Cost (optional, INR)</label
+              >
+              <input
+                type="number"
+                id="activityCost"
+                class="form-control"
+                min="0"
+                step="0.01"
+              />
+            </div>
+            <div class="form-group">
+              <label for="activityDescription" class="form-label"
+                >Description (optional)</label
+              >
+              <textarea
+                id="activityDescription"
+                class="form-control"
+                rows="3"
+              ></textarea>
+            </div>
+            <div class="form-group">
+              <label for="activityLocation" class="form-label"
+                >Location (optional)</label
+              >
+              <input type="text" id="activityLocation" class="form-control" />
+            </div>
+            <div class="form-group">
+              <label for="activityCategory" class="form-label"
+                >Category (optional)</label
+              >
+              <select id="activityCategory" class="form-control">
+                <option value="">Select Category</option>
+                <option value="Spiritual">Spiritual</option>
+                <option value="Adventure">Adventure</option>
+                <option value="Dining">Dining</option>
+                <option value="Sightseeing">Sightseeing</option>
+                <option value="Wellness">Wellness</option>
+                <option value="Travel">Travel</option>
+                <option value="Shopping">Shopping</option>
+                <option value="Relaxation">Relaxation</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="activityNotes" class="form-label"
+                >Notes (optional)</label
+              >
+              <textarea
+                id="activityNotes"
+                class="form-control"
+                rows="3"
+              ></textarea>
+            </div>
+            <div class="form-group">
+              <label for="activityLatitude" class="form-label"
+                >Latitude (optional)</label
+              >
+              <input
+                type="number"
+                id="activityLatitude"
+                class="form-control"
+                step="any"
+              />
+            </div>
+            <div class="form-group">
+              <label for="activityLongitude" class="form-label"
+                >Longitude (optional)</label
+              >
+              <input
+                type="number"
+                id="activityLongitude"
+                class="form-control"
+                step="any"
+              />
+            </div>
+            <div class="form-group">
+              <label for="activityReminder" class="form-label"
+                >Enable Reminder</label
+              >
+              <input
+                type="checkbox"
+                id="activityReminder"
+                class="form-control"
+                style="width: auto"
+              />
+            </div>
+            <input type="hidden" id="dayId" />
+            <input type="hidden" id="activityId" />
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button id="cancelActivity" class="btn btn-secondary">Cancel</button>
+          <button id="saveActivity" class="btn">Save Activity</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="saveNotification" class="save-notification">
+      <i class="fas fa-check-circle"></i>
+      <span>Itinerary saved successfully!</span>
+    </div>
+
+    <script src="./js/trip.js"></script>
+    <script src="./js/script.js"></script>
+  </body>
+</html>
